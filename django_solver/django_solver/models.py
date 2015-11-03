@@ -1,2 +1,1 @@
-
-from base.models import TaskModel
+from .base.models import TaskModel, PythonCodeModel, TemplateModel
