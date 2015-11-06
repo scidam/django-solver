@@ -1,13 +1,15 @@
 
 import ast
 import os
-from django.db import models
-from django.utils.translation import ugettext as _
-from django.utils.encoding import python_2_unicode_compatible
+
+from django.conf import settings
 from django.core.exceptions import ValidationError
-from .settings import ALLOWED_TEMPLATE_TYPES
+from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
+from django.utils.translation import ugettext as _
 from .errors import PYCODE_ERROR, DEFAULT_DICT_ERROR
 
+__all__ = ['TemplateModel', 'PythonCodeModel', 'TaskModel']
 
 @python_2_unicode_compatible
 class TemplateModel(models.Model):
@@ -24,8 +26,8 @@ class TemplateModel(models.Model):
                             verbose_name=_("Template file"),
                             blank=True, null=True)
     type = models.CharField(verbose_name=_("Template type"),
-                            default=ALLOWED_TEMPLATE_TYPES[0][0],
-                            choices=ALLOWED_TEMPLATE_TYPES,
+                            default=settings.ALLOWED_TEMPLATE_TYPES[0][0],
+                            choices=settings.ALLOWED_TEMPLATE_TYPES,
                             max_length=2
                             )
 
@@ -74,8 +76,6 @@ class PythonCodeModel(models.Model):
                 ast.parse(self.body)
             except:
                 raise ValidationError(PYCODE_ERROR)
-
-
 
 
 class TaskModel(models.Model):
