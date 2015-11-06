@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 import tempfile
 
 from django.conf import settings
@@ -7,13 +8,18 @@ from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.test import TestCase, override_settings
 
-from django_solver.django_solver.tests import template_data
+from django_solver.models import TaskModel, PythonCodeModel, TemplateModel
 
-from ..models import TaskModel, PythonCodeModel, TemplateModel
+from .data import template_data
 
 
 # from django.test.utils import override_settings
 current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(current_dir)
+
+print sys.path
+sdfsdf
+
 
 MROOT = os.path.abspath(getattr(settings, 'MEDIA_ROOT', ''))
 NEWMROOT = tempfile.mkdtemp(dir=MROOT)

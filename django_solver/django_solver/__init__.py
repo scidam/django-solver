@@ -1,3 +1,5 @@
+#import django.conf.global_settings
+
 def load_defaults(application):
     """Load cmsplugin-nvd3 default settings"""
     try:

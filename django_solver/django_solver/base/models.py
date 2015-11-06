@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext as _
-from .errors import PYCODE_ERROR, DEFAULT_DICT_ERROR
+from django_solver.base.errors import PYCODE_ERROR, DEFAULT_DICT_ERROR
 
 __all__ = ['TemplateModel', 'PythonCodeModel', 'TaskModel']
 
