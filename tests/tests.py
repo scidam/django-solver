@@ -26,7 +26,6 @@ def _safely_create(model, filepath, filefield='file'):
         f = open(filepath, 'r')
         myfile = File(f)
         obj = model.objects.create(**{filefield: myfile})
-        print(filepath)
     except IOError:
         return
     return obj
@@ -38,7 +37,7 @@ class TemplateModelTestCase(TestCase):
         TemplateModel.objects.create(
                             body=template_data.VALID_TEMPLATE_BODY_JINJA,
                                      )
-        _safely_create(TemplateModel, os.path.join(current_dir, 'test', 'data',
+        _safely_create(TemplateModel, os.path.join(current_dir, 'tests', 'data',
                        template_data.VALID_TEMPLATE_FILENAME_JINJA)
                        )
 
@@ -69,7 +68,7 @@ class PythonCodeTestCase(TestCase):
                          template_data.VALID_PYTHON_CODE)
 
     def test_valid_python_code_file(self):
-        _safely_create(PythonCodeModel, os.path.join(current_dir, 'test', 'data',
+        _safely_create(PythonCodeModel, os.path.join(current_dir, 'tests', 'data',
                        template_data.VALID_PYTHON_CODE_FILENAME)
                        )
         self.assertIn(template_data.VALID_PYTHON_CODE_FILENAME.split(sep='.')[0],
@@ -90,11 +89,12 @@ class PythonCodeTestCase(TestCase):
     def test_invalid_python_code_file(self):
         raised_invalid_code = False
         try:
-            obj = _safely_create(PythonCodeModel,
-                           os.path.join(current_dir, 'test', 'data',
-                            template_data.INVALID_PYTHON_CODE_FILENAME
-                                 )
-                           )
+            obj = _safely_create(
+                PythonCodeModel,
+                os.path.join(current_dir, 'tests', 'data',
+                             template_data.INVALID_PYTHON_CODE_FILENAME
+                             )
+                                  )
             obj.clean()
         except ValidationError:
             raised_invalid_code = True
@@ -116,14 +116,15 @@ class TaskModelTestCase(TestCase):
     def test_model_creation(self):
         """Just creation of TaskModel instance"""
         task = TaskModel.objects.all()[0]
-        self.assertEqual(task.code_preamble.body, template_data.VALID_PYTHON_CODE)
+        self.assertEqual(task.code_preamble.body,
+                         template_data.VALID_PYTHON_CODE)
 
     def test_invalid_model_creation(self):
         raised_validation = False
         try:
             tempobj = TemplateModel.objects.create(body=template_data.VALID_TEMPLATE_BODY_JINJA)
             pyobj = PythonCodeModel.objects.create(body=template_data.VALID_PYTHON_CODE)
-            obj = TaskModel.objects.create(formulation_template=tempobj, 
+            obj = TaskModel.objects.create(formulation_template=tempobj,
                          solution_template=tempobj,
                          code=pyobj,
                          code_preamble=pyobj,
