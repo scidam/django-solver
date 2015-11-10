@@ -9,7 +9,7 @@ from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext as _
 from django_solver.base.errors import PYCODE_ERROR, DEFAULT_DICT_ERROR
 
-__all__ = ['TemplateModel', 'PythonCodeModel', 'TaskModel']
+__all__ = ['TemplateModel', 'PythonCodeModel', 'RegularTask']
 
 @python_2_unicode_compatible
 class TemplateModel(models.Model):
@@ -36,7 +36,6 @@ class TemplateModel(models.Model):
             return self.file.name[:30]
         if self.body:
             return self.body[:30]
-
 
 
 @python_2_unicode_compatible
@@ -102,7 +101,8 @@ class TaskModel(models.Model):
     defaults = models.TextField(verbose_name=_("Default values"), blank=True, default='')
 
     # Date of Task creation
-    created = models.DateTimeField(auto_now=True, blank=True)
+    updated = models.DateTimeField(auto_now=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True, blank=True)
 
     public = models.BooleanField(default=False,
                                  verbose_name=_('Published'), blank=True
@@ -120,3 +120,14 @@ class TaskModel(models.Model):
                 raise ValidationError(DEFAULT_DICT_ERROR)
             if not isinstance(parsed, ast.Dict):
                 raise ValidationError(DEFAULT_DICT_ERROR)
+
+    class Meta:
+        abstract = True
+
+
+class RegularTask(TaskModel):
+    
+    class Meta:
+        abstract = False
+    
+

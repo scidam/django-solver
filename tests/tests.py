@@ -8,7 +8,8 @@ from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.test import TestCase, override_settings
 
-from django_solver.models import TaskModel, PythonCodeModel, TemplateModel
+from django_solver.models import RegularTask, PythonCodeModel, TemplateModel
+from django_solver.base.utils import store_solver_task
 
 from .data import template_data
 
@@ -105,7 +106,7 @@ class TaskModelTestCase(TestCase):
     def setUp(self):
         tempobj = TemplateModel.objects.create(body=template_data.VALID_TEMPLATE_BODY_JINJA)
         pyobj = PythonCodeModel.objects.create(body=template_data.VALID_PYTHON_CODE)
-        TaskModel.objects.create(formulation_template=tempobj, 
+        RegularTask.objects.create(formulation_template=tempobj, 
                                  solution_template=tempobj,
                                  code=pyobj,
                                  code_preamble=pyobj,
@@ -115,7 +116,7 @@ class TaskModelTestCase(TestCase):
 
     def test_model_creation(self):
         """Just creation of TaskModel instance"""
-        task = TaskModel.objects.all()[0]
+        task = RegularTask.objects.all()[0]
         self.assertEqual(task.code_preamble.body,
                          template_data.VALID_PYTHON_CODE)
 
@@ -124,7 +125,7 @@ class TaskModelTestCase(TestCase):
         try:
             tempobj = TemplateModel.objects.create(body=template_data.VALID_TEMPLATE_BODY_JINJA)
             pyobj = PythonCodeModel.objects.create(body=template_data.VALID_PYTHON_CODE)
-            obj = TaskModel.objects.create(formulation_template=tempobj,
+            obj = RegularTask.objects.create(formulation_template=tempobj,
                          solution_template=tempobj,
                          code=pyobj,
                          code_preamble=pyobj,
@@ -135,3 +136,8 @@ class TaskModelTestCase(TestCase):
         except ValidationError:
             raised_validation = True
         self.assertTrue(raised_validation)
+
+    @unittest.skipIf('solver' not in sys.__modules__)
+    def test_store_solver_task(self):
+            pass
+  
