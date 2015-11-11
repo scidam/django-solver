@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import shutil
 import sys
@@ -7,11 +8,21 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.test import TestCase, override_settings
+import unittest
+from django.test.client import Client
 
 from django_solver.models import RegularTask, PythonCodeModel, TemplateModel
-from django_solver.base.utils import store_solver_task
+from django_solver.base.utils import create_regular_task
 
-from .data import template_data
+from .data import template_data, solver_task_example
+
+try:
+    # tests that are using solver should be excluded
+    from solver.base import Task, Solver
+except ImportError:
+    print('Error: solver module could not be imported. Some tests will be skipped.')
+    
+
 
 
 # from django.test.utils import override_settings
@@ -113,6 +124,7 @@ class TaskModelTestCase(TestCase):
                                  code_postamble=pyobj,
                                  defaults=template_data.VALID_DEFAULT_DICT
                                  )
+        self.client = Client()
 
     def test_model_creation(self):
         """Just creation of TaskModel instance"""
@@ -137,7 +149,73 @@ class TaskModelTestCase(TestCase):
             raised_validation = True
         self.assertTrue(raised_validation)
 
-    @unittest.skipIf('solver' not in sys.__modules__)
-    def test_store_solver_task(self):
-            pass
+    @unittest.skipIf('Solver' in locals(), "Solver not installed")
+    def test_regular_task_creation(self):
+        atask = Task(solver_task_example.task_template, 
+                           solution_template=solver_task_example.task_solution_template,
+                           default_vals=solver_task_example.task_defaults,
+                           code=solver_task_example.task_code
+                           )
+        asolver = Solver(atask,
+                                preamble=solver_task_example.task_code_preamble,
+                                postamble=solver_task_example.task_code_postamble
+                                )
+        regtask = create_regular_task(asolver)
+        self.assertIsInstance(regtask, RegularTask)
+        self.assertTrue(RegularTask.objects.exists())
+
+    @unittest.skipIf('Solver' in locals(), "Solver not installed")
+    def test_regular_task_create_with_filetemplate(self):
+        atask = Task(solver_task_example.task_template, 
+                           solution_template=solver_task_example.task_solution_template,
+                           default_vals=solver_task_example.task_defaults,
+                           code=solver_task_example.task_code
+                           )
+        asolver = Solver(atask,
+                                preamble=solver_task_example.task_code_preamble,
+                                postamble=solver_task_example.task_code_postamble
+                                )
+        regtask = create_regular_task(asolver, store_template_to_file=True)
+        self.assertIsInstance(regtask, RegularTask)
+        self.assertTrue(RegularTask.objects.exists())
+        self.assertTrue(os.path.isfile(os.path.join(MROOT, regtask.formulation_template.file.url)))
+        self.assertTrue(os.path.isfile(os.path.join(MROOT, regtask.solution_template.file.url)))
+        
+    @unittest.skipIf('Solver' in locals(), "Solver not installed")
+    def test_regular_task_create_with_filecodes(self):
+        atask = Task(solver_task_example.task_template, 
+                           solution_template=solver_task_example.task_solution_template,
+                           default_vals=solver_task_example.task_defaults,
+                           code=solver_task_example.task_code
+                           )
+        asolver = Solver(atask,
+                                preamble=solver_task_example.task_code_preamble,
+                                postamble=solver_task_example.task_code_postamble
+                                )
+        regtask = create_regular_task(asolver, store_code_to_file=True)
+        self.assertIsInstance(regtask, RegularTask)
+        self.assertTrue(RegularTask.objects.exists())
+        self.assertTrue(os.path.isfile(os.path.join(MROOT, regtask.code.file.url)))
+        self.assertTrue(os.path.isfile(os.path.join(MROOT, regtask.code_preamble.file.url)))
+        self.assertTrue(os.path.isfile(os.path.join(MROOT, regtask.code_postamble.file.url)))
+
+
+
+#     @unittest.skipIf('Solver' in locals(), "Solver not installed")
+#     def test_regular_task_update(self):
+#         atask = Task(solver_task_example.task_template,
+#                            solution_template=solver_task_example.task_solution_template,
+#                            default_vals=solver_task_example.task_defaults,
+#                            code=solver_task_example.task_code
+#                            )
+#         asolver = Solver(atask,
+#                                 preamble=solver_task_example.task_code_preamble,
+#                                 postamble=solver_task_example.task_code_postamble
+#                                 )
+#         regtask = create_regular_task(asolver)
+#         regtask.save()
+#         self.assertTrue(RegularTask.objects.exists())
+    
+                                    
+        
   

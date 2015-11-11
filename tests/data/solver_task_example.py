@@ -21,3 +21,5 @@ OUTPUTS['result']=int(INPUTS['total']/INPUTS['paper_cost'])
 task_solution_template = '''
 Answer is {{result}}.
 '''
+
+task_defaults = {'username' : 'dmitry', 'total' : 100, 'paper_cost' : 20}

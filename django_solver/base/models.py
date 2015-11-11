@@ -26,8 +26,8 @@ class TemplateModel(models.Model):
                             verbose_name=_("Template file"),
                             blank=True, null=True)
     type = models.CharField(verbose_name=_("Template type"),
-                            default=settings.ALLOWED_TEMPLATE_TYPES[0][0],
-                            choices=settings.ALLOWED_TEMPLATE_TYPES,
+                            default=settings.DJSOLVER_TEMPLATE_TYPES[0][0],
+                            choices=settings.DJSOLVER_TEMPLATE_TYPES,
                             max_length=2
                             )
 
