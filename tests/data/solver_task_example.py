@@ -16,6 +16,7 @@ OUTPUTS['postamvle'] = myvalue
 
 task_code = '''
 OUTPUTS['result']=int(INPUTS['total']/INPUTS['paper_cost'])
+myvalue = 1
 '''
 
 task_solution_template = '''
