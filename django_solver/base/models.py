@@ -84,18 +84,26 @@ class TaskModel(models.Model):
                                                 )
     solution_template = models.OneToOneField(
                                 TemplateModel,
-                                verbose_name=_("Solution")
+                                verbose_name=_("Solution"),
+                                blank=True,
+                                null=True
                                             )
     code = models.OneToOneField(PythonCodeModel,
-                                verbose_name=_("Python code")
+                                verbose_name=_("Python code"),
+                                null=True,
+                                blank=True
                                 )
 
     code_preamble = models.OneToOneField(PythonCodeModel,
-                                         verbose_name=_("Python code")
+                                         verbose_name=_("Python code"),
+                                         null=True,
+                                         blank=True
                                          )
 
     code_postamble = models.OneToOneField(PythonCodeModel,
-                                          verbose_name=_("Python code")
+                                          verbose_name=_("Python code"),
+                                          null=True,
+                                          blank=True
                                           )
 
     defaults = models.TextField(verbose_name=_("Default values"), blank=True, default='')
