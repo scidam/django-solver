@@ -12,7 +12,7 @@ import unittest
 from django.test.client import Client
 
 from django_solver.models import RegularTask, PythonCodeModel, TemplateModel
-from django_solver.base.utils import create_regular_task
+from django_solver.base.utils import regtask_from_solver, solver_from_regtask
 
 from .data import template_data, solver_task_example
 
@@ -61,7 +61,7 @@ class TemplateModelTestCase(TestCase):
                          template_data.VALID_TEMPLATE_BODY_JINJA)
 
     def test_file_template_creation(self):
-        self.assertIn(template_data.VALID_TEMPLATE_FILENAME_JINJA.split(sep='.')[0],
+        self.assertIn(template_data.VALID_TEMPLATE_FILENAME_JINJA.split('.')[0],
                       TemplateModel.objects.get(body__exact='').file.name,
                       )
 
@@ -83,7 +83,7 @@ class PythonCodeTestCase(TestCase):
         _safely_create(PythonCodeModel, os.path.join(current_dir, 'tests', 'data',
                        template_data.VALID_PYTHON_CODE_FILENAME)
                        )
-        self.assertIn(template_data.VALID_PYTHON_CODE_FILENAME.split(sep='.')[0],
+        self.assertIn(template_data.VALID_PYTHON_CODE_FILENAME.split('.')[0],
                       PythonCodeModel.objects.get(body__exact='').file.name,
                       )
 
@@ -125,6 +125,7 @@ class TaskModelTestCase(TestCase):
                                  defaults=template_data.VALID_DEFAULT_DICT
                                  )
         self.client = Client()
+        
 
     def test_model_creation(self):
         """Just creation of TaskModel instance"""
@@ -160,7 +161,7 @@ class TaskModelTestCase(TestCase):
                                 preamble=solver_task_example.task_code_preamble,
                                 postamble=solver_task_example.task_code_postamble
                                 )
-        regtask = create_regular_task(asolver)
+        regtask = regtask_from_solver(asolver)
         self.assertIsInstance(regtask, RegularTask)
         self.assertTrue(RegularTask.objects.exists())
 
@@ -175,12 +176,12 @@ class TaskModelTestCase(TestCase):
                                 preamble=solver_task_example.task_code_preamble,
                                 postamble=solver_task_example.task_code_postamble
                                 )
-        regtask = create_regular_task(asolver, store_template_to_file=True)
+        regtask = regtask_from_solver(asolver, store_template_to_file=True)
         self.assertIsInstance(regtask, RegularTask)
         self.assertTrue(RegularTask.objects.exists())
         self.assertTrue(os.path.isfile(os.path.join(MROOT, regtask.formulation_template.file.url)))
         self.assertTrue(os.path.isfile(os.path.join(MROOT, regtask.solution_template.file.url)))
-        
+
     @unittest.skipIf('Solver' in locals(), "Solver not installed")
     def test_regular_task_create_with_filecodes(self):
         atask = Task(solver_task_example.task_template, 
@@ -192,30 +193,123 @@ class TaskModelTestCase(TestCase):
                                 preamble=solver_task_example.task_code_preamble,
                                 postamble=solver_task_example.task_code_postamble
                                 )
-        regtask = create_regular_task(asolver, store_code_to_file=True)
+        regtask = regtask_from_solver(asolver, store_code_to_file=True)
         self.assertIsInstance(regtask, RegularTask)
         self.assertTrue(RegularTask.objects.exists())
         self.assertTrue(os.path.isfile(os.path.join(MROOT, regtask.code.file.url)))
         self.assertTrue(os.path.isfile(os.path.join(MROOT, regtask.code_preamble.file.url)))
         self.assertTrue(os.path.isfile(os.path.join(MROOT, regtask.code_postamble.file.url)))
 
+    @unittest.skipIf('Solver' in locals(), "Solver not installed")
+    def test_regulartask_to_solvertask(self):
+        '''Testing for regular task instance conversion and try to solve it.'''
+        regtask = RegularTask.objects.all()[0]
+        atask, asolver = solver_from_regtask(regtask)
+        self.assertIsInstance(asolver, Solver)
+        self.assertIsInstance(atask, Task)
 
+    @unittest.skipIf('Solver' in locals(), "Solver not installed")
+    def test_regulartask_trytosolve(self):
+        '''Try to solve a regular task with code in body field.
+        '''
+        tempobj = TemplateModel(body=template_data.VALID_TEMPLATE_BODY_JINJA)
+        pyobj = PythonCodeModel(body=template_data.VALID_PYTHON_CODE)
+        tempobj.save()
+        pyobj.save()
+        regtask = RegularTask.objects.create(formulation_template=tempobj, 
+                                 solution_template=tempobj,
+                                 code=pyobj,
+                                 defaults=template_data.VALID_DEFAULT_DICT
+                                 )
+        atask, asolver = solver_from_regtask(regtask)
+        asolver.solve()
+        self.assertTrue(asolver.is_solved)
 
-#     @unittest.skipIf('Solver' in locals(), "Solver not installed")
-#     def test_regular_task_update(self):
-#         atask = Task(solver_task_example.task_template,
-#                            solution_template=solver_task_example.task_solution_template,
-#                            default_vals=solver_task_example.task_defaults,
-#                            code=solver_task_example.task_code
-#                            )
-#         asolver = Solver(atask,
-#                                 preamble=solver_task_example.task_code_preamble,
-#                                 postamble=solver_task_example.task_code_postamble
-#                                 )
-#         regtask = create_regular_task(asolver)
-#         regtask.save()
-#         self.assertTrue(RegularTask.objects.exists())
+    @unittest.skipIf('Solver' in locals(), "Solver not installed")
+    def test_regulartask_solve_codefromfile(self):
+        '''Try to solve a regular task with code passed as a file'''
+        tempobj = TemplateModel(body=template_data.VALID_TEMPLATE_BODY_JINJA)
+        tempobj.save()
+        pyobj = _safely_create(PythonCodeModel, os.path.join(current_dir, 'tests', 'data',
+                       template_data.VALID_PYTHON_CODE_FILENAME
+                       ))
+        regtask = RegularTask.objects.create(formulation_template=tempobj, 
+                                 solution_template=tempobj,
+                                 code=pyobj,
+                                 defaults=template_data.VALID_DEFAULT_DICT
+                                 )
+        atask, asolver = solver_from_regtask(regtask)
+        asolver.solve()
+        self.assertTrue(asolver.is_solved)
     
-                                    
+    @unittest.skipIf('Solver' in locals(), "Solver not installed")
+    def test_regulartask_to_solvertask_notsilent(self):
+        '''
+        check silent creation of solver instance with invalid default values.
+        '''
+        tempobj = TemplateModel(body=template_data.VALID_TEMPLATE_BODY_JINJA)
+        tempobj.save()
+        regtask = RegularTask.objects.create(formulation_template=tempobj, 
+                                 defaults=template_data.INVALID_DEFAULT_DICT
+                                 )
+        error_checked = False
+        try:
+            atask, asolver = solver_from_regtask(regtask, silent=False)
+        except:
+            error_checked = True
+        atask, asolver = solver_from_regtask(regtask)
+        self.assertTrue(error_checked)
+        self.assertIsInstance(atask, Task)
+        self.assertIsInstance(asolver, Solver)
+
+
+class CategoryTestCase(TestCase):
+    '''Problem categories'''
+    def setUp(self):
+        taskcat = TaskCategory(
+                               name=category_data.test_category_name,
+                               keywords=category_data.test_category_keys, 
+                               description=category_data.test_category_descr
+                               )
+        taskcat.save()
+        self.category = taskcat
+
+    def test_category_created(self):
+        self.assertTrue(TaskCategory.objects.exists())
+
+    def test_category_features(self):
+        self.assertEqual(self.category.name, category_data.test_category_name)
+        self.assertEqual(self.category.keywords, category_data.test_category_keys)
+        self.assertEqual(self.category.description, category_data.test_category_descr)
+
+    def test_category_parsing(self): 
+        keylist = category_data.test_category_keys.split(',')
+        self.assertEqual(self.category.parsekeywords, keylist)
+
+    def test_category_structure(self):
+        TaskCategory.objects.create(name=category_data.test_child1_name, parent=self.category)
+        cat2 = TaskCategory.objects.create(name=category_data.test_child2_name, parent=self.category)
+        TaskCategory.objects.create(name=category_data.test_child3_name, parent=cat2)
+        TaskCategory.objects.create(name=category_data.test_child4_name, parent=cat2)
+        del cat2
+        # Testing for structure correctness
+        self.assertTrue(self.category.is_root_node())
+        cat2 = TaskCategory.objects.get(name=category_data.test_child2_name)
+        chil1 = set([x['name'] for x in cat2.get_children().values()]) 
+        chil2 = set([category_data.test_child3_name, category_data.test_child4_name])
+        self.assertEqual(chil1, chil2)
+
         
-  
+
+    
+    
+        
+        
+        
+    
+        
+    
+
+    
+ 
+ 
