@@ -1,20 +1,24 @@
 from __future__ import print_function
+
 import os
 import shutil
 import sys
 import tempfile
+import unittest
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.test import TestCase, override_settings
-import unittest
 from django.test.client import Client
-
-from django_solver.models import RegularTask, PythonCodeModel, TemplateModel
 from django_solver.base.utils import regtask_from_solver, solver_from_regtask
+from django_solver.models import (RegularTask,
+                                  PythonCodeModel, TemplateModel,
+                                  TaskCategory)
 
-from .data import template_data, solver_task_example
+from .data import (template_data, solver_task_example,
+                   category_data)
+
 
 try:
     # tests that are using solver should be excluded
@@ -282,9 +286,9 @@ class CategoryTestCase(TestCase):
         self.assertEqual(self.category.keywords, category_data.test_category_keys)
         self.assertEqual(self.category.description, category_data.test_category_descr)
 
-    def test_category_parsing(self): 
+    def test_category_parsing(self):
         keylist = category_data.test_category_keys.split(',')
-        self.assertEqual(self.category.parsekeywords, keylist)
+        self.assertEqual(self.category.get_keywords, keylist)
 
     def test_category_structure(self):
         TaskCategory.objects.create(name=category_data.test_child1_name, parent=self.category)
@@ -295,21 +299,6 @@ class CategoryTestCase(TestCase):
         # Testing for structure correctness
         self.assertTrue(self.category.is_root_node())
         cat2 = TaskCategory.objects.get(name=category_data.test_child2_name)
-        chil1 = set([x['name'] for x in cat2.get_children().values()]) 
+        chil1 = set([x['name'] for x in cat2.get_children().values()])
         chil2 = set([category_data.test_child3_name, category_data.test_child4_name])
         self.assertEqual(chil1, chil2)
-
-        
-
-    
-    
-        
-        
-        
-    
-        
-    
-
-    
- 
- 

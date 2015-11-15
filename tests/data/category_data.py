@@ -15,10 +15,9 @@ test_child4_name = 'Child 4'
 #
 #        base_category
 #        /           \
-#       /             \   
-#      Child 1         Child 2  
-#                        /  \ 
-#                       /    \ 
+#       /             \
+#      Child 1         Child 2
+#                        /  \
+#                       /    \
 #                    Child3  Chield4
 # -----------------------------------------------------------------
-

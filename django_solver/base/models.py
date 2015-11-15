@@ -2,6 +2,8 @@
 import ast
 import os
 
+from mptt.models import MPTTModel, TreeForeignKey
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -9,7 +11,9 @@ from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext as _
 from django_solver.base.errors import PYCODE_ERROR, DEFAULT_DICT_ERROR
 
-__all__ = ['TemplateModel', 'PythonCodeModel', 'RegularTask']
+
+__all__ = ['TemplateModel', 'PythonCodeModel', 'RegularTask', 'TaskCategory']
+
 
 @python_2_unicode_compatible
 class TemplateModel(models.Model):
@@ -66,7 +70,7 @@ class PythonCodeModel(models.Model):
         if self.file:
             if os.path.isfile(self.file.path):
                 try:
-                    ast.parse(self.file.read())
+                    ast.parse(self.file.read().decode('utf-8'))
                 except:
                     raise ValidationError(PYCODE_ERROR)
 
@@ -77,6 +81,7 @@ class PythonCodeModel(models.Model):
                 raise ValidationError(PYCODE_ERROR)
 
 
+@python_2_unicode_compatible
 class TaskModel(models.Model):
     formulation_template = models.OneToOneField(
                                 TemplateModel,
@@ -106,7 +111,8 @@ class TaskModel(models.Model):
                                           blank=True
                                           )
 
-    defaults = models.TextField(verbose_name=_("Default values"), blank=True, default='')
+    defaults = models.TextField(verbose_name=_("Default values"),
+                                blank=True, default='')
 
     # Date of Task creation
     updated = models.DateTimeField(auto_now=True, blank=True)
@@ -134,8 +140,27 @@ class TaskModel(models.Model):
 
 
 class RegularTask(TaskModel):
-    
+
     class Meta:
         abstract = False
-    
+
+
+@python_2_unicode_compatible
+class TaskCategory(MPTTModel):
+    name = models.CharField(max_length=100, unique=True, default='')
+    keywords = models.CharField(max_length=1000, blank=True, default='')
+    description = models.CharField(max_length=2000, blank=True, default='')
+    image = models.ImageField(upload_to="djsolver/cats", null=True, blank=True)
+    parent = TreeForeignKey('self', null=True, blank=True,
+                            related_name='children', db_index=True)
+
+    class MPTTMeta:
+        order_insertion_by = ['name']
+
+    def __str__(self):
+        return self.name[:50]
+
+    @property
+    def get_keywords(self):
+        return self.keywords.split(settings.DJSOLVER_KEYWORD_SEPARATOR)
 

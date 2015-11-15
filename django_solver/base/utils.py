@@ -2,12 +2,14 @@ try:
     from solver.base import Solver, Task
 except ImportError:
     pass
+import ast
+
+from django.conf import settings
+from django.core.files.base import ContentFile
+from django.db import transaction
+
 from .models import RegularTask, TemplateModel, PythonCodeModel
 
-from django.db import transaction
-from django.core.files.base import ContentFile
-from django.conf import settings
-import ast
 
 @transaction.atomic
 def regtask_from_solver(task_solver, store_template_to_file=False, store_code_to_file=False):
@@ -62,7 +64,7 @@ def solver_from_regtask(regtask, silent=True):
     
     if regtask.formulation_template:
         if regtask.formulation_template.file and not regtask.formulation_template.body:
-            task_content = regtask.formulation_template.file.read()
+            task_content = regtask.formulation_template.file.read().decode('utf-8')
         else:
             task_content = regtask.formulation_template.body
     else:
@@ -78,10 +80,10 @@ def solver_from_regtask(regtask, silent=True):
             task_defvals = ast.literal_eval(regtask.defaults)
     else:
         task_defvals = None
-    
+
     if regtask.code:
         if regtask.code.file and not regtask.code.body:
-            task_code = regtask.code.file.read()
+            task_code = regtask.code.file.read().decode('utf-8')
         else:
             task_code = regtask.code.body
     else:
@@ -89,23 +91,23 @@ def solver_from_regtask(regtask, silent=True):
 
     if regtask.solution_template:
         if regtask.solution_template.file and not regtask.solution_template.body:
-            task_soltempl = regtask.solution_template.file.read()
+            task_soltempl = regtask.solution_template.file.read().decode('utf-8')
         else:
             task_soltempl = regtask.solution_template.body
     else:
         task_soltempl = None
-    
+
     if regtask.code_preamble:
         if regtask.code_preamble.file and not regtask.code_preamble.body:
-            solver_preamble = regtask.code_preamble.file.read()
+            solver_preamble = regtask.code_preamble.file.read().decode('utf-8')
         else:
             solver_preamble = regtask.code_preamble.body
     else:
         solver_preamble = ''
-    
+
     if regtask.code_postamble:
         if regtask.code_postamble.file and not regtask.code_postamble.body:
-            solver_postamble = regtask.code_postamble.file.read()
+            solver_postamble = regtask.code_postamble.file.read().decode('utf-8')
         else:
             solver_postamble = regtask.code_postamble.body
     else:
