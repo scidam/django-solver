@@ -117,6 +117,7 @@ class PythonCodeTestCase(TestCase):
             raised_invalid_code = True
         self.assertTrue(raised_invalid_code)
 
+@override_settings(MEDIA_ROOT=NEWMROOT)
 class TaskModelTestCase(TestCase):
     def setUp(self):
         tempobj = TemplateModel.objects.create(body=template_data.VALID_TEMPLATE_BODY_JINJA)
@@ -183,8 +184,8 @@ class TaskModelTestCase(TestCase):
         regtask = regtask_from_solver(asolver, store_template_to_file=True)
         self.assertIsInstance(regtask, RegularTask)
         self.assertTrue(RegularTask.objects.exists())
-        self.assertTrue(os.path.isfile(os.path.join(MROOT, regtask.formulation_template.file.url)))
-        self.assertTrue(os.path.isfile(os.path.join(MROOT, regtask.solution_template.file.url)))
+        self.assertTrue(os.path.isfile(os.path.join(settings.MEDIA_ROOT, regtask.formulation_template.file.url)))
+        self.assertTrue(os.path.isfile(os.path.join(settings.MEDIA_ROOT, regtask.solution_template.file.url)))
 
     @unittest.skipIf('Solver' in locals(), "Solver not installed")
     def test_regular_task_create_with_filecodes(self):
@@ -200,9 +201,9 @@ class TaskModelTestCase(TestCase):
         regtask = regtask_from_solver(asolver, store_code_to_file=True)
         self.assertIsInstance(regtask, RegularTask)
         self.assertTrue(RegularTask.objects.exists())
-        self.assertTrue(os.path.isfile(os.path.join(MROOT, regtask.code.file.url)))
-        self.assertTrue(os.path.isfile(os.path.join(MROOT, regtask.code_preamble.file.url)))
-        self.assertTrue(os.path.isfile(os.path.join(MROOT, regtask.code_postamble.file.url)))
+        self.assertTrue(os.path.isfile(os.path.join(settings.MEDIA_ROOT, regtask.code.file.url)))
+        self.assertTrue(os.path.isfile(os.path.join(settings.MEDIA_ROOT, regtask.code_preamble.file.url)))
+        self.assertTrue(os.path.isfile(os.path.join(settings.MEDIA_ROOT, regtask.code_postamble.file.url)))
 
     @unittest.skipIf('Solver' in locals(), "Solver not installed")
     def test_regulartask_to_solvertask(self):
@@ -266,6 +267,7 @@ class TaskModelTestCase(TestCase):
         self.assertIsInstance(atask, Task)
         self.assertIsInstance(asolver, Solver)
 
+@override_settings(MEDIA_ROOT=NEWMROOT)
 class CategoryTestCase(TestCase):
     '''Problem categories'''
     def setUp(self):
@@ -310,6 +312,7 @@ class CategoryTestCase(TestCase):
             self.assertTrue(False)
         self.assertIn('testfile', self.category.image.url)
     
+@override_settings(MEDIA_ROOT=NEWMROOT)
 class Category_insideRegularTaskTestCase(TestCase):
     def setUp(self):
         tempobj = TemplateModel(body=template_data.VALID_TEMPLATE_BODY_JINJA)
@@ -348,6 +351,38 @@ class Category_insideRegularTaskTestCase(TestCase):
 
     def test_categories(self):
         self.assertEqual(TaskCategory.objects.filter(regtask=self.regtask).count(), 3)
+
+
+
+class Restriction_TestCase(TestCase):
+    def setUp(self):
+        self.restriction = RestrictionModel.objects.create(content='[]')
+
+class RegularUser_TestCase(TestCase):
+    def setUp(self):
+        self.reguser = RegularUserModel.objects.create(username='testuser')
+
+
+
+
+class RestrictionSettings_TestCasse(TestCase):
+
+    def test_global_settings(self):
+        self.assertIsInstance(settings.DJSOLVER_RESTRICTIONS_GLOBAL, dict)
+
+    def test_global_settings_defaults(self):
+        restrictions = getattr(settings, 'DJSOLVER_RESTRICTIONS_GLOBAL', {})
+        max_concurent_processes = restrictions['MAX_PROCESSES']
+        max_execution_time = restrictions['MAX_EXECUTION_TIME']
+        max_field_length = restrictions['MAX_FIELD_LENGTH']
+        max_filesize = restrictions['MAX_FILE_SIZE']
+        self.assertEqual(max_concurent_processes, 2)
+        self.assertEqual(max_execution_time, 600)
+        self.assertEqual(max_field_length, 1000)
+        self.assertEqual(max_filesize, 1000000) # Max allowed file size in bytes
+        
+    def test_default_user_restrictions(self):
+        self.assertEqual()
     
     
-    
+        
