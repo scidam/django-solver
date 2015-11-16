@@ -9,6 +9,7 @@ import unittest
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
+from django.core.files.base import ContentFile
 from django.test import TestCase, override_settings
 from django.test.client import Client
 from django_solver.base.utils import regtask_from_solver, solver_from_regtask
@@ -115,7 +116,6 @@ class PythonCodeTestCase(TestCase):
         except ValidationError:
             raised_invalid_code = True
         self.assertTrue(raised_invalid_code)
-
 
 class TaskModelTestCase(TestCase):
     def setUp(self):
@@ -266,7 +266,6 @@ class TaskModelTestCase(TestCase):
         self.assertIsInstance(atask, Task)
         self.assertIsInstance(asolver, Solver)
 
-
 class CategoryTestCase(TestCase):
     '''Problem categories'''
     def setUp(self):
@@ -286,8 +285,8 @@ class CategoryTestCase(TestCase):
         self.assertEqual(self.category.keywords, category_data.test_category_keys)
         self.assertEqual(self.category.description, category_data.test_category_descr)
 
-    def test_category_parsing(self):
-        keylist = category_data.test_category_keys.split(',')
+    def test_keywords_parsing(self):
+        keylist = category_data.test_category_keys.split(settings.DJSOLVER_KEYWORD_SEPARATOR)
         self.assertEqual(self.category.get_keywords, keylist)
 
     def test_category_structure(self):
@@ -302,3 +301,53 @@ class CategoryTestCase(TestCase):
         chil1 = set([x['name'] for x in cat2.get_children().values()])
         chil2 = set([category_data.test_child3_name, category_data.test_child4_name])
         self.assertEqual(chil1, chil2)
+    
+    def test_image(self):
+        try:
+            self.category.image.save('testfile.png',ContentFile("This is just a testing string"))
+            self.category.save()
+        except IOError:
+            self.assertTrue(False)
+        self.assertIn('testfile', self.category.image.url)
+    
+class Category_insideRegularTaskTestCase(TestCase):
+    def setUp(self):
+        tempobj = TemplateModel(body=template_data.VALID_TEMPLATE_BODY_JINJA)
+        tempobj.save()
+        self.regtask = RegularTask.objects.create(formulation_template=tempobj, 
+                                 defaults=template_data.VALID_DEFAULT_DICT,
+                                 keywords = category_data.test_category_keys,
+                                 )
+        taskcat = TaskCategory.objects.create(
+                               name=category_data.test_category_name,
+                               keywords=category_data.test_category_keys, 
+                               description=category_data.test_category_descr,
+                               regtask=self.regtask
+                               )
+        taskcat1 = TaskCategory.objects.create(
+                               name=category_data.test_category_name+'1',
+                               keywords=category_data.test_category_keys, 
+                               description=category_data.test_category_descr,
+                               regtask=self.regtask
+                               )
+        
+        taskcat2 = TaskCategory.objects.create(
+                               name=category_data.test_category_name+'2',
+                               keywords=category_data.test_category_keys, 
+                               description=category_data.test_category_descr,
+                               regtask=self.regtask
+                               )
+        taskcat3 = TaskCategory.objects.create(name=category_data.test_category_name+'3',
+                               keywords=category_data.test_category_keys, 
+                               description=category_data.test_category_descr
+                                               )
+        
+    def test_keywords_parsing(self):
+        keylist = category_data.test_category_keys.split(settings.DJSOLVER_KEYWORD_SEPARATOR)
+        self.assertEqual(self.regtask.get_keywords, keylist)
+
+    def test_categories(self):
+        self.assertEqual(TaskCategory.objects.filter(regtask=self.regtask).count(), 3)
+    
+    
+    

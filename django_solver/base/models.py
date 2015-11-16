@@ -121,7 +121,12 @@ class TaskModel(models.Model):
     public = models.BooleanField(default=False,
                                  verbose_name=_('Published'), blank=True
                                  )
-
+    keywords = models.CharField(max_length=1000, blank=True, default=True)
+    
+    @property
+    def get_keywords(self):
+        return self.keywords.split(settings.DJSOLVER_KEYWORD_SEPARATOR)
+    
     def render(self):
         raise NotImplemented
 
@@ -153,7 +158,9 @@ class TaskCategory(MPTTModel):
     image = models.ImageField(upload_to="djsolver/cats", null=True, blank=True)
     parent = TreeForeignKey('self', null=True, blank=True,
                             related_name='children', db_index=True)
-
+    regtask = models.ForeignKey(RegularTask, verbose_name=_('Problem'),
+                                null=True, blank=True, related_name='categories'
+                                )
     class MPTTMeta:
         order_insertion_by = ['name']
 
@@ -163,4 +170,6 @@ class TaskCategory(MPTTModel):
     @property
     def get_keywords(self):
         return self.keywords.split(settings.DJSOLVER_KEYWORD_SEPARATOR)
+
+
 
