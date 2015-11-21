@@ -122,11 +122,11 @@ class TaskModel(models.Model):
                                  verbose_name=_('Published'), blank=True
                                  )
     keywords = models.CharField(max_length=1000, blank=True, default=True)
-    
+
     @property
     def get_keywords(self):
         return self.keywords.split(settings.DJSOLVER_KEYWORD_SEPARATOR)
-    
+
     def render(self):
         raise NotImplemented
 

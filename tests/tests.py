@@ -26,7 +26,7 @@ try:
     from solver.base import Task, Solver
 except ImportError:
     print('Error: solver module could not be imported. Some tests will be skipped.')
-    
+
 
 
 
@@ -246,7 +246,7 @@ class TaskModelTestCase(TestCase):
         atask, asolver = solver_from_regtask(regtask)
         asolver.solve()
         self.assertTrue(asolver.is_solved)
-    
+
     @unittest.skipIf('Solver' in locals(), "Solver not installed")
     def test_regulartask_to_solvertask_notsilent(self):
         '''
@@ -311,7 +311,7 @@ class CategoryTestCase(TestCase):
         except IOError:
             self.assertTrue(False)
         self.assertIn('testfile', self.category.image.url)
-    
+
 @override_settings(MEDIA_ROOT=NEWMROOT)
 class Category_insideRegularTaskTestCase(TestCase):
     def setUp(self):
@@ -333,7 +333,7 @@ class Category_insideRegularTaskTestCase(TestCase):
                                description=category_data.test_category_descr,
                                regtask=self.regtask
                                )
-        
+
         taskcat2 = TaskCategory.objects.create(
                                name=category_data.test_category_name+'2',
                                keywords=category_data.test_category_keys, 
@@ -344,15 +344,13 @@ class Category_insideRegularTaskTestCase(TestCase):
                                keywords=category_data.test_category_keys, 
                                description=category_data.test_category_descr
                                                )
-        
+
     def test_keywords_parsing(self):
         keylist = category_data.test_category_keys.split(settings.DJSOLVER_KEYWORD_SEPARATOR)
         self.assertEqual(self.regtask.get_keywords, keylist)
 
     def test_categories(self):
         self.assertEqual(TaskCategory.objects.filter(regtask=self.regtask).count(), 3)
-
-
 
 class Restriction_TestCase(TestCase):
     def setUp(self):
@@ -361,8 +359,6 @@ class Restriction_TestCase(TestCase):
 class RegularUser_TestCase(TestCase):
     def setUp(self):
         self.reguser = RegularUserModel.objects.create(username='testuser')
-
-
 
 
 class RestrictionSettings_TestCasse(TestCase):
@@ -378,11 +374,6 @@ class RestrictionSettings_TestCasse(TestCase):
         max_filesize = restrictions['MAX_FILE_SIZE']
         self.assertEqual(max_concurent_processes, 2)
         self.assertEqual(max_execution_time, 600)
-        self.assertEqual(max_field_length, 1000)
-        self.assertEqual(max_filesize, 1000000) # Max allowed file size in bytes
-        
-    def test_default_user_restrictions(self):
-        self.assertEqual()
-    
-    
-        
+        self.assertEqual(max_field_length, 10000)
+        self.assertEqual(max_filesize, '1M') # Max allowed file size in bytes
+
