@@ -18,7 +18,7 @@ from django_solver.models import (RegularTask,
                                   TaskCategory)
 
 from .data import (template_data, solver_task_example,
-                   category_data)
+                   category_data, restrictions)
 
 
 try:
@@ -130,7 +130,7 @@ class TaskModelTestCase(TestCase):
                                  defaults=template_data.VALID_DEFAULT_DICT
                                  )
         self.client = Client()
-        
+
 
     def test_model_creation(self):
         """Just creation of TaskModel instance"""
@@ -352,13 +352,42 @@ class Category_insideRegularTaskTestCase(TestCase):
     def test_categories(self):
         self.assertEqual(TaskCategory.objects.filter(regtask=self.regtask).count(), 3)
 
-class Restriction_TestCase(TestCase):
-    def setUp(self):
-        self.restriction = RestrictionModel.objects.create(content='[]')
 
 class RegularUser_TestCase(TestCase):
+
     def setUp(self):
-        self.reguser = RegularUserModel.objects.create(username='testuser')
+        self.reguser = RegularUserModel.objects.create(name='testuser')
+
+    def test_regularuser(self):
+        self.assertEqual(self.reguser, RegularUserModel.objects.all()[0])
+        self.assertEqual(RegularUserModel.objects.all()[0].name, 'testuser')
+
+
+class Restriction_TestCase(TestCase):
+
+    def setUp(self):
+        self.restriction = RestrictionModel.objects.create(content='def simple(): return True')
+        self.restriction1 = RestrictionModel.objects.create(content='def simple(): return False')
+        self.complex = RestrictionModel.objects.create(content=restrictions.complex_code)
+
+        # Lets create RegUser and RegTask for testing...
+        self.reguser = RegularUserModel.objects.create(name='testuser')
+
+        tempobj = TemplateModel.objects.create(body=template_data.VALID_TEMPLATE_BODY_JINJA)
+        pyobj = PythonCodeModel.objects.create(body=template_data.VALID_PYTHON_CODE)
+        self.regtask = RegularTask.objects.create(formulation_template=tempobj, 
+                                 solution_template=tempobj,
+                                 code=pyobj,
+                                 code_preamble=pyobj,
+                                 code_postamble=pyobj,
+                                 defaults=template_data.VALID_DEFAULT_DICT
+                                 )
+        
+
+    def test_single_restriction(self):
+
+
+
 
 
 class RestrictionSettings_TestCasse(TestCase):
