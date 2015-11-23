@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 from django.conf import settings
+from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.base import ContentFile
@@ -17,17 +18,11 @@ from django_solver.models import (RegularTask,
                                   PythonCodeModel, TemplateModel,
                                   TaskCategory, RegularUserModel
                                   )
-from django_solver.restrictions.models import RestrictionModel
-
-from django.contrib.auth.models import User, Group
-
 from django_solver.restrictions import Restriction, restriction_pool
-
+from django_solver.restrictions.models import RestrictionModel
 
 from .data import (template_data, solver_task_example,
                    category_data, restrictions)
-
-
 
 
 try:
@@ -381,7 +376,7 @@ class RestrictionModel_TestCase(TestCase):
         self.user = RegularUserModel.objects.create(user=user)
         self.restriction.user = self.user
         self.restriction.save()
-        
+
         newuser = User.objects.create(username='newuser')
         self.anotheruser = RegularUserModel.objects.create(user=newuser)
         self.list_restriction = RestrictionModel.objects.create(restriction='username_in_list')
