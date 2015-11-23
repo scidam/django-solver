@@ -10,9 +10,10 @@ from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext as _
 from django_solver.base.errors import PYCODE_ERROR, DEFAULT_DICT_ERROR
+from django.contrib.auth.models import User
+from django_solver.restrictions import restriction_pool
 
-
-__all__ = ['TemplateModel', 'PythonCodeModel', 'RegularTask', 'TaskCategory']
+__all__ = ['TemplateModel', 'PythonCodeModel', 'RegularTask', 'TaskCategory', 'RegularUserModel']
 
 
 @python_2_unicode_compatible
@@ -172,5 +173,19 @@ class TaskCategory(MPTTModel):
         return self.keywords.split(settings.DJSOLVER_KEYWORD_SEPARATOR)
 
 
+@python_2_unicode_compatible
+class RegularUserModel(models.Model):
+    user = models.OneToOneField(User,
+                                verbose_name=_("User"),
+                                )
+    def __str__(self):
+        return self.user.username
 
-
+    def status(self, **kwargs):
+        _kwargs = kwargs
+        _kwargs.update({'user': self.user})
+        res = []
+        for item in self.restrictions.all():
+            if item.restriction in restriction_pool.keys():
+              res.append(restriction_pool[item.restriction].status(**_kwargs))
+        return all(res)

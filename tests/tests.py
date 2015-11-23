@@ -15,10 +15,19 @@ from django.test.client import Client
 from django_solver.base.utils import regtask_from_solver, solver_from_regtask
 from django_solver.models import (RegularTask,
                                   PythonCodeModel, TemplateModel,
-                                  TaskCategory)
+                                  TaskCategory, RegularUserModel
+                                  )
+from django_solver.restrictions.models import RestrictionModel
+
+from django.contrib.auth.models import User, Group
+
+from django_solver.restrictions import Restriction, restriction_pool
+
 
 from .data import (template_data, solver_task_example,
                    category_data, restrictions)
+
+
 
 
 try:
@@ -356,39 +365,87 @@ class Category_insideRegularTaskTestCase(TestCase):
 class RegularUser_TestCase(TestCase):
 
     def setUp(self):
-        self.reguser = RegularUserModel.objects.create(name='testuser')
+        user = User.objects.create(username='testuser')
+        self.reguser = RegularUserModel.objects.create(user=user)
 
     def test_regularuser(self):
         self.assertEqual(self.reguser, RegularUserModel.objects.all()[0])
-        self.assertEqual(RegularUserModel.objects.all()[0].name, 'testuser')
+        self.assertEqual(RegularUserModel.objects.all()[0].user.username, 'testuser')
 
 
-class Restriction_TestCase(TestCase):
+class RestrictionModel_TestCase(TestCase):
 
     def setUp(self):
-        self.restriction = RestrictionModel.objects.create(content='def simple(): return True')
-        self.restriction1 = RestrictionModel.objects.create(content='def simple(): return False')
-        self.complex = RestrictionModel.objects.create(content=restrictions.complex_code)
-
-        # Lets create RegUser and RegTask for testing...
-        self.reguser = RegularUserModel.objects.create(name='testuser')
-
-        tempobj = TemplateModel.objects.create(body=template_data.VALID_TEMPLATE_BODY_JINJA)
-        pyobj = PythonCodeModel.objects.create(body=template_data.VALID_PYTHON_CODE)
-        self.regtask = RegularTask.objects.create(formulation_template=tempobj, 
-                                 solution_template=tempobj,
-                                 code=pyobj,
-                                 code_preamble=pyobj,
-                                 code_postamble=pyobj,
-                                 defaults=template_data.VALID_DEFAULT_DICT
-                                 )
+        self.restriction = RestrictionModel.objects.create(restriction='specific_username')
+        user = User.objects.create(username='testuser')
+        self.user = RegularUserModel.objects.create(user=user)
+        self.restriction.user = self.user
+        self.restriction.save()
         
+        newuser = User.objects.create(username='newuser')
+        self.anotheruser = RegularUserModel.objects.create(user=newuser)
+        self.list_restriction = RestrictionModel.objects.create(restriction='username_in_list')
+        self.list_restriction.user = self.anotheruser
+        self.list_restriction.save()
+
+    def test_restriction_to_user(self):
+        self.assertFalse(self.restriction.status(username='testuser'))
+        self.assertTrue(self.restriction.status(username='simpleuser'))
+
+    def test_check_reguser_restrictions(self):
+        reguser = self.restriction.user
+        self.assertTrue(reguser.restrictions.exists())
+
+    def test_check_reguser_status(self):
+        reguser = self.restriction.user
+        self.assertFalse(reguser.status(username='testuser'))
+        self.assertTrue(reguser.status(username='simpleuser'))
+
+    def test_check_user_in_list(self):
+        reguser = self.list_restriction.user
+        self.assertFalse(reguser.status(userlist=['post', 'newuser', 'count']))
+        self.assertTrue(reguser.status(userlist=['post', 'another', 'count']))
+
+
+class RestrictionClass_TestCase(TestCase):
+
+    def setUp(self):
+        self.restriction = Restriction(description='')
+        self.user = User.objects.create(username='testuser')
+        self.group = Group.objects.create(name='testgroup')
+        self.user.groups.add(self.group)
+        self.user.save()
+        self.notgroupuser = User.objects.create(username='testuser2')
 
     def test_single_restriction(self):
+        res = False
+        try:
+            self.restriction.status()
+        except NotImplementedError:
+            res=True
+        self.assertTrue(res)
 
+    def test_create_new_restriction(self):
+        def _status(k,  user, taskinstance):
+            pass
+        self.restriction.status = _status
 
+    def test_not_in_group(self):
+        rest = restriction_pool['in_group']
+        self.assertTrue(rest.status(user=self.user, group=self.group))
+        self.assertFalse(rest.status(user=self.notgroupuser, group=self.group))
 
-
+    def test_specific_username(self):
+        rest = restriction_pool['specific_username']
+        self.assertFalse(rest.status(user=self.user, username='testuser'))
+        self.assertTrue(rest.status(user=self.notgroupuser, username='test'))
+    
+    def test_specific_username_in_list(self):
+        rest = restriction_pool['username_in_list']
+        self.assertFalse(rest.status(user=self.user, userlist=['testuser', 'testuser1', 'testuser2']))
+        self.assertTrue(rest.status(user=self.user, userlist=['testuser3', 'testuser1', 'testuser2']))
+      
+    
 
 class RestrictionSettings_TestCasse(TestCase):
 
