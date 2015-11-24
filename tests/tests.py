@@ -16,8 +16,9 @@ from django.test.client import Client
 from django_solver.base.utils import regtask_from_solver, solver_from_regtask
 from django_solver.models import (RegularTask,
                                   PythonCodeModel, TemplateModel,
-                                  TaskCategory, RegularUserModel
+                                  TaskCategory, RegularUserModel,
                                   )
+from django_solver.base.renderer import TaskRenderer
 from django_solver.restrictions import Restriction, restriction_pool
 from django_solver.restrictions.models import RestrictionModel
 
@@ -441,8 +442,7 @@ class RestrictionClass_TestCase(TestCase):
         self.assertTrue(rest.status(user=self.user, userlist=['testuser3', 'testuser1', 'testuser2']))
       
     
-
-class RestrictionSettings_TestCasse(TestCase):
+class RestrictionSettings_TestCase(TestCase):
 
     def test_global_settings(self):
         self.assertIsInstance(settings.DJSOLVER_RESTRICTIONS_GLOBAL, dict)
@@ -457,4 +457,41 @@ class RestrictionSettings_TestCasse(TestCase):
         self.assertEqual(max_execution_time, 600)
         self.assertEqual(max_field_length, 10000)
         self.assertEqual(max_filesize, '1M') # Max allowed file size in bytes
+
+
+class TaskRenderer_TestCase(TestCase):
+
+    def setUp(self):
+        tempobj = TemplateModel.objects.create(body=template_data.VALID_TEMPLATE_BODY_JINJA)
+        pyobj = PythonCodeModel.objects.create(body=template_data.VALID_PYTHON_CODE)
+        regtask = RegularTask.objects.create(formulation_template=tempobj, 
+                                 solution_template=tempobj,
+                                 code=pyobj,
+                                 code_preamble=pyobj,
+                                 code_postamble=pyobj,
+                                 defaults=template_data.VALID_DEFAULT_DICT,
+                                 public = True
+                                 )
+        self.renderer = TaskRenderer(task=regtask, user=None, request=None)
+        
+        tempobj_file = _safely_create(TemplateModel, os.path.join(current_dir, 'tests', 'data',
+                       template_data.VALID_TEMPLATE_FILENAME_JINJA)
+                       )
+        self.regtask_file = RegularTask.objects.create(formulation_template=tempobj_file, 
+                                 solution_template=tempobj_file,
+                                 code=pyobj,
+                                 code_preamble=pyobj,
+                                 code_postamble=pyobj,
+                                 defaults=template_data.VALID_DEFAULT_DICT,
+                                 public = True
+                                 )
+
+    def test_default_renderer(self):
+        self.assertEqual(self.renderer.render_simple(), template_data.RENDERED_ANSWER)
+        
+    def test_default_renderer_filed(self):
+        myrend = TaskRenderer(self.regtask_file)
+        self.assertEqual(myrend.render_simple(), template_data.RENDERED_ANSWER)
+
+
 

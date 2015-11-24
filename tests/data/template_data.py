@@ -33,3 +33,8 @@ VALID_DEFAULT_DICT = '''
 INVALID_DEFAULT_DICT = '''
 {'username';'dmitry', 'age': 30}
 '''
+
+
+# --------------------- For Renderer Task Model ---------------------------
+
+RENDERED_ANSWER = "My name is dmitry. I am 30 y.o."

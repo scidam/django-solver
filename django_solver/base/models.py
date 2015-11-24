@@ -94,19 +94,19 @@ class TaskModel(models.Model):
                                 blank=True,
                                 null=True
                                             )
-    code = models.OneToOneField(PythonCodeModel,
+    code = models.ForeignKey(PythonCodeModel,
                                 verbose_name=_("Python code"),
                                 null=True,
                                 blank=True
                                 )
 
-    code_preamble = models.OneToOneField(PythonCodeModel,
+    code_preamble = models.ForeignKey(PythonCodeModel,
                                          verbose_name=_("Python code"),
                                          null=True,
                                          blank=True
                                          )
 
-    code_postamble = models.OneToOneField(PythonCodeModel,
+    code_postamble = models.ForeignKey(PythonCodeModel,
                                           verbose_name=_("Python code"),
                                           null=True,
                                           blank=True
@@ -127,6 +127,14 @@ class TaskModel(models.Model):
     @property
     def get_keywords(self):
         return self.keywords.split(settings.DJSOLVER_KEYWORD_SEPARATOR)
+
+    @property
+    def get_defaults(self):
+        try:
+            res = ast.literal_eval(self.defaults)
+        except:
+            res = dict()
+        return res 
 
     def render(self):
         raise NotImplemented
