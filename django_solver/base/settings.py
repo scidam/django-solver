@@ -17,3 +17,5 @@ DJSOLVER_RESTRICTIONS_GLOBAL = {
                                 'MAX_FIELD_LENGTH': 10000,
                                 'MAX_FILE_SIZE': '1M',
                                 }
+
+DJSOLVER_TEXTINPUT_PREFIX = 'djs_inputs'
