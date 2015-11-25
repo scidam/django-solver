@@ -13,12 +13,12 @@ from django.core.files import File
 from django.core.files.base import ContentFile
 from django.test import TestCase, override_settings
 from django.test.client import Client
+from django_solver.base.renderer import TaskRenderer
 from django_solver.base.utils import regtask_from_solver, solver_from_regtask
 from django_solver.models import (RegularTask,
                                   PythonCodeModel, TemplateModel,
                                   TaskCategory, RegularUserModel,
                                   )
-from django_solver.base.renderer import TaskRenderer
 from django_solver.restrictions import Restriction, restriction_pool
 from django_solver.restrictions.models import RestrictionModel
 
@@ -458,7 +458,7 @@ class RestrictionSettings_TestCase(TestCase):
         self.assertEqual(max_field_length, 10000)
         self.assertEqual(max_filesize, '1M') # Max allowed file size in bytes
 
-
+@override_settings(MEDIA_ROOT=NEWMROOT)
 class TaskRenderer_TestCase(TestCase):
 
     def setUp(self):
@@ -487,12 +487,13 @@ class TaskRenderer_TestCase(TestCase):
 
     def test_default_renderer(self):
         self.assertEqual(self.renderer.render_simple(), template_data.RENDERED_ANSWER)
-        
+
     def test_default_renderer_filed(self):
         myrend = TaskRenderer(self.regtask_file)
         self.assertEqual(myrend.render_simple(), template_data.RENDERED_ANSWER)
-    
+
     def test_render_with_inputs(self):
         myrend = TaskRenderer(self.regtask_file)
         self.assertIn('input', myrend.render_with_inputs())
-    
+        self.assertIn('input', self.renderer.render_with_inputs())
+
