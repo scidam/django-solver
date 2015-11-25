@@ -435,13 +435,13 @@ class RestrictionClass_TestCase(TestCase):
         rest = restriction_pool['specific_username']
         self.assertFalse(rest.status(user=self.user, username='testuser'))
         self.assertTrue(rest.status(user=self.notgroupuser, username='test'))
-    
+
     def test_specific_username_in_list(self):
         rest = restriction_pool['username_in_list']
         self.assertFalse(rest.status(user=self.user, userlist=['testuser', 'testuser1', 'testuser2']))
         self.assertTrue(rest.status(user=self.user, userlist=['testuser3', 'testuser1', 'testuser2']))
-      
-    
+
+
 class RestrictionSettings_TestCase(TestCase):
 
     def test_global_settings(self):
@@ -473,7 +473,6 @@ class TaskRenderer_TestCase(TestCase):
                                  public = True
                                  )
         self.renderer = TaskRenderer(task=regtask, user=None, request=None)
-        
         tempobj_file = _safely_create(TemplateModel, os.path.join(current_dir, 'tests', 'data',
                        template_data.VALID_TEMPLATE_FILENAME_JINJA)
                        )
@@ -492,6 +491,8 @@ class TaskRenderer_TestCase(TestCase):
     def test_default_renderer_filed(self):
         myrend = TaskRenderer(self.regtask_file)
         self.assertEqual(myrend.render_simple(), template_data.RENDERED_ANSWER)
-
-
-
+    
+    def test_render_with_inputs(self):
+        myrend = TaskRenderer(self.regtask_file)
+        self.assertIn('input', myrend.render_with_inputs())
+    
