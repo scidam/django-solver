@@ -5,6 +5,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+import json
 
 from django.core.urlresolvers import reverse
 from django.conf import settings
@@ -22,7 +23,7 @@ from django_solver.models import (RegularTask,
                                   )
 from django_solver.restrictions import Restriction, restriction_pool
 from django_solver.restrictions.models import RestrictionModel
-import django_solver.base.views import djviews 
+import django_solver.base.views as djviews 
 
 from .data import (template_data, solver_task_example,
                    category_data, restrictions)
@@ -500,7 +501,7 @@ class TaskRenderer_TestCase(TestCase):
 
 class SendTaskView_TestCase(TestCase):
     '''
-    When senging a task, it is assumed that all of 
+    When sending a task, it is assumed that all of 
     '''
 
     def setUp(self):
@@ -517,12 +518,25 @@ class SendTaskView_TestCase(TestCase):
 
     def test_send_a_task(self):
         url = reverse(djviews.load_task)
-        response = self.client.post(url, self.regtask.get_defaults)
-        self.assertEqual(respones.status_code, 200)
+        response = self.client.post(url, json.dumps(self.regtask.get_defaults))
+        self.assertEqual(response.status_code, 200)
+        response_str = response.content
+        data = json.loads(response_str)
+        assertEqual(data['error'], 0)
+
+    def test_query_task_status(self):
+        url = reverse(djviews.load_task)
+        response = self.client.post(url, json.dumps(self.regtask.get_defaults))
+        self.assertEqual(response.status_code, 200)
+        response_str = response.content
+        data = json.loads(response_str)
+        status_url = reverse(djviews.check_status)
+        self.assertEqual(len(data['hash']), 32)
+        query = json.dumps({'hash': data['hash']})
+        status_str = self.client.post(status_url, query)
+        status_data = json.loads(status_str)
+        self.assertIsInstance(status_data['result'], dict)
+        self.assertGreater(status_data['elapsed_time'], 0.0)
+        self.assertEqual(status_data['status'], 0)
+
     
-        
-        
-    
-
-
-
