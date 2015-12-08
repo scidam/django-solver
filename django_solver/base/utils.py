@@ -3,12 +3,17 @@ try:
 except ImportError:
     pass
 import ast
+import re
 
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db import transaction
 
 from .models import RegularTask, TemplateModel, PythonCodeModel
+
+
+
+
 
 
 @transaction.atomic
@@ -122,3 +127,92 @@ def solver_from_regtask(regtask, silent=True):
                      postamble=solver_postamble
                      )
     return atask, asolver
+
+
+
+
+# ---------- Input data validation and conversion -------------------
+
+float_value_pat = re.compile(r'[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?')
+
+integer_value_pat = re.compile(r'[+-]?\d+')
+
+allowed_input_types = ['float', 'integer', 'string']
+
+
+def validate(input_data, input_type):
+    pass
+
+
+def  _strictly_validate_numericals(input_data, dtype):
+
+    if dtype == 'integer':
+        cpat = integer_value_pat
+    elif dtype == 'float':
+        cpat = float_value_pat
+    else:
+        return False
+    
+    def _single_integer_check(single):
+        # empty input data not allowed in strictly validation
+        if len(single) == 0:
+            return False
+        if cpat.match(single):
+            return True
+        else:
+            return False
+    
+    def _integer_row_validation(row):
+        datalist = row.split(settings.DJSOLVER_DATA_DELIMITER)
+        return True if all(map(_single_integer_check, datalist)) else False
+    
+    if input_data.count(settings.DJSOLVER_DATA_DELIMITER) == 0\
+        and input_data.count(settings.DJSOLVER_DATA_ROW_DELIMITER) == 0:
+        return _single_integer_check(input_data)
+
+    # 1D array checking ... It is just a row
+    elif input_data.count(settings.DJSOLVER_DATA_DELIMITER) > 0\
+        and input_data.count(settings.DJSOLVER_DATA_ROW_DELIMITER) == 0:
+        return _integer_row_validation(input_data)
+
+    # 2d array checking ... It is just few rows
+    elif input_data.count(settings.DJSOLVER_DATA_DELIMITER) > 0\
+        and input_data.count(settings.DJSOLVER_DATA_ROW_DELIMITER) > 0:
+        rows = input_data.split(settings.DJSOLVER_DATA_ROW_DELIMITER)
+        return True if all(map(_integer_row_validation, rows)) else False
+    else:
+        return False
+
+
+
+def strict_validate(input_data, input_type):
+    if input_type == 'string':
+        return True if input_data else False
+    elif input_type == 'float':
+        return _strictly_validate_integers(input_data, 'float')
+    elif input_type == 'integer':
+        return _strictly_validate_integers(input_data, 'integer')
+    else:
+        return False
+    
+
+def smart_validate(input_data, input_type):
+    pass
+
+def convert(input_data):
+    ''' Performs smart data conversion procedure. '''
+    
+    pass
+# -------------------------------------------------------------------
+
+def get_data_form_request(request):
+    # request should be ajax only
+    if not request.is_ajax():
+        return None
+
+    taskid = request.POST.get('task-id', None)
+    input_data_str = request.POST.get('input-data', None)
+    
+    
+    
+    
